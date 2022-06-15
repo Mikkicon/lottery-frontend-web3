@@ -1,6 +1,14 @@
-import web3 from "../web3";
-import lottery from "../lottery";
 import { useEffect, useState } from "react";
+import web3 from "../web3";
+import { AbiItem } from "web3-utils/types";
+import Lottery from "../lottery";
+import abi from "../local-abi.json";
+import vars from "../variables.json";
+
+const lottery = new web3.eth.Contract(
+  abi as AbiItem[],
+  vars["contract-address"]
+);
 
 export type Address = string;
 type InitialData = [string, string[], string, string[]];
@@ -35,7 +43,7 @@ export function useLotteryContract() {
   }
 
   function listenEvents() {
-    window.ethereum.on("accountsChanged", function () {
+    window.ethereum?.on("accountsChanged", function () {
       web3.eth.getAccounts().then(([account]) => setCurrentAccount(account));
     });
 

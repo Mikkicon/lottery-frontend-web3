@@ -1,0 +1,7 @@
+{
+  "name": "Using fixtures to represent data",
+  "email": "hello@cypress.io",
+  "body": "Fixtures are a great way to mock data for responses to routes",
+  "contract-address": "0xFB987E10e2C9E79aa3a08c55490612A36d66238d",
+  "testnet-address": "http://localhost:8545"
+}

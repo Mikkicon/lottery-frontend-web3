@@ -1,0 +1,69 @@
+[
+  {
+    "inputs": [],
+    "stateMutability": "payable",
+    "type": "constructor",
+    "payable": true,
+    "signature": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "winner",
+        "type": "address"
+      }
+    ],
+    "name": "ChooseWinner",
+    "type": "event",
+    "signature": "0x38c71f2a06a4f79911c62762336ad80d1dd8d804c8ec3ff1e0dd0c3630ea0be0"
+  },
+  {
+    "inputs": [],
+    "name": "enterCompetition",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function",
+    "payable": true,
+    "signature": "0xe6df48a5"
+  },
+  {
+    "inputs": [],
+    "name": "getPlayers",
+    "outputs": [
+      { "internalType": "address[]", "name": "", "type": "address[]" }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true,
+    "signature": "0x8b5b9ccc"
+  },
+  {
+    "inputs": [],
+    "name": "manager",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true,
+    "signature": "0x481c6a75"
+  },
+  {
+    "inputs": [],
+    "name": "pickWinner",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "signature": "0x5d495aea"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "name": "playersAddresses",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true,
+    "signature": "0x472016da"
+  }
+]

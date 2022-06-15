@@ -71,4 +71,10 @@ export const abi: AbiItem[] = [
   },
 ];
 
-export default new web3.eth.Contract(abi, address);
+const obj = {
+  Lottery() {
+    return new web3.eth.Contract(abi, address);
+  },
+};
+
+export default obj;
