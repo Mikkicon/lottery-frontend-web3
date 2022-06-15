@@ -1,6 +1,6 @@
-import { MutableRefObject, useEffect, useRef, useState } from "react";
-import styled, * as other from "styled-components";
-
+import { useEffect, useRef, useState } from "react";
+import styled from "styled-components";
+import lottery from "../../lottery";
 import "./Slot.css";
 
 const LotteryScreen = styled.div`
@@ -53,6 +53,7 @@ const SlotItem = styled.span<{ rotateXDeg: number; translateZ: number }>`
 `;
 
 const Slot = () => {
+  const [manager, setManager] = useState();
   const [prizePool, setPrizePool] = useState(0);
   const [duration, setDuration] = useState(20);
   const [amount, setAmount] = useState("");
@@ -73,6 +74,10 @@ const Slot = () => {
   }
 
   useEffect(() => {
+    lottery.methods.manager().call().then(setManager);
+  }, []);
+
+  useEffect(() => {
     if (duration === 1)
       setTimeout(() => {
         setDuration(0);
@@ -91,6 +96,7 @@ const Slot = () => {
     <LotteryScreen>
       <div style={{ backdropFilter: "blur(10px)", paddingBottom: 20 }}>
         <h1>Lottery</h1>
+        <p>Manager address: {manager}</p>
         <p>Total players: {players.length}</p>
         <p>Prize pool: {prizePool} ether</p>
         <div>
