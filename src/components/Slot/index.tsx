@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { useLotteryContract } from "../../hooks/useLotteryContract";
+import { RefObject, useEffect, useRef, useState } from "react";
+import { Address, useLotteryContract } from "../../hooks/useLotteryContract";
 import { LotteryScreen, Cylinder, SlotWindow, SlotItem } from "./styles";
 
 const getTranslateZ = (total = 0) => {
@@ -12,7 +12,6 @@ const generateEmoji = () => `&#1285${Math.floor(Math.random() * 100)};`;
 export type Player = { symbol: string; address: string };
 const Slot = () => {
   const [duration, setDuration] = useState(10);
-  const [amount, setAmount] = useState<number>(0);
   const cylinderRef = useRef<HTMLSpanElement>(null);
   const [winnerWithEmoji, setWinnerWithEmoji] = useState<Player>();
   const [playersWithEmoji, setPlayersWithEmoji] = useState<Player[]>([]);
@@ -27,17 +26,15 @@ const Slot = () => {
     enter,
     pickWinner,
   } = useLotteryContract();
-  console.log({ winnerWithEmoji, winner });
 
-  async function handleEnter() {
+  async function handleEnter(amount: number) {
     setEnterStatus("Entering a competition...");
     await enter(`${amount}`);
     setEnterStatus("You've successfully entered");
     setTimeout(() => setEnterStatus(""), 1000);
 
-    setPlayersWithEmoji(
-      players.map((address) => ({ address, symbol: generateEmoji() }))
-    );
+    const newP = players.map((a) => ({ address: a, symbol: generateEmoji() }));
+    setPlayersWithEmoji(newP);
   }
 
   function handlePickWinner() {
@@ -47,10 +44,9 @@ const Slot = () => {
 
   useEffect(
     function onPlayersUpdateSetEmojis() {
-      if (players)
-        setPlayersWithEmoji(
-          players.map((address) => ({ address, symbol: generateEmoji() }))
-        );
+      if (!players) return;
+      const ps = players.map((a) => ({ address: a, symbol: generateEmoji() }));
+      setPlayersWithEmoji(ps);
     },
     [players]
   );
@@ -83,27 +79,11 @@ const Slot = () => {
       <div style={{ backdropFilter: "blur(10px)", paddingBottom: 20 }}>
         <h1>🎰Lottery🎰</h1>
         <div>
-          {currentAccount ? (
-            <div>
-              <label>Amount</label>
-              <br />
-              <input
-                name="amount"
-                type="number"
-                step={0.0005}
-                min={0.0005}
-                value={amount}
-                onChange={({ target }) => setAmount(parseFloat(target.value))}
-              />
-              {enterStatus ? (
-                <p>{enterStatus}</p>
-              ) : (
-                <button disabled={amount < 0.0005} onClick={handleEnter}>
-                  Enter
-                </button>
-              )}
-            </div>
-          ) : null}
+          <EnterSection
+            enterStatus={enterStatus}
+            currentAccount={currentAccount}
+            handleEnter={handleEnter}
+          />
           <ManagerSection
             hasPlayers={!!players.length}
             isManager={isManager}
@@ -112,26 +92,12 @@ const Slot = () => {
           />
         </div>
       </div>
-      <SlotWindow>
-        <Cylinder ref={cylinderRef} duration={duration}>
-          {winnerWithEmoji ? (
-            <SlotItem
-              dangerouslySetInnerHTML={{ __html: winnerWithEmoji.symbol }}
-              rotateXDeg={0}
-              translateZ={0}
-            />
-          ) : (
-            playersWithEmoji.map(({ symbol }, index) => (
-              <SlotItem
-                dangerouslySetInnerHTML={{ __html: symbol }}
-                key={index}
-                rotateXDeg={index * (360 / playersWithEmoji.length)}
-                translateZ={getTranslateZ(playersWithEmoji.length)}
-              />
-            ))
-          )}
-        </Cylinder>
-      </SlotWindow>
+      <SlotSection
+        winnerWithEmoji={winnerWithEmoji}
+        playersWithEmoji={playersWithEmoji}
+        cylinderRef={cylinderRef}
+        duration={duration}
+      />
       <InfoSection
         currentAccount={currentAccount}
         manager={manager}
@@ -142,7 +108,88 @@ const Slot = () => {
   );
 };
 
-function InfoSection({
+type SlotSectionProps = {
+  winnerWithEmoji?: Player;
+  playersWithEmoji: Player[];
+  cylinderRef: RefObject<HTMLSpanElement>;
+  duration: number;
+};
+export function SlotSection({
+  winnerWithEmoji,
+  playersWithEmoji,
+  cylinderRef,
+  duration,
+}: SlotSectionProps) {
+  return (
+    <SlotWindow>
+      <Cylinder ref={cylinderRef} duration={duration}>
+        {winnerWithEmoji ? (
+          <SlotItem
+            dangerouslySetInnerHTML={{ __html: winnerWithEmoji.symbol }}
+            rotateXDeg={0}
+            translateZ={0}
+          />
+        ) : (
+          playersWithEmoji.map(({ symbol }, index) => (
+            <SlotItem
+              dangerouslySetInnerHTML={{ __html: symbol }}
+              key={index}
+              rotateXDeg={index * (360 / playersWithEmoji.length)}
+              translateZ={getTranslateZ(playersWithEmoji.length)}
+            />
+          ))
+        )}
+      </Cylinder>
+    </SlotWindow>
+  );
+}
+
+type EnterSectionProps = {
+  enterStatus: string;
+  currentAccount?: Address;
+  handleEnter: (a: number) => void;
+};
+export function EnterSection({
+  enterStatus,
+  currentAccount,
+  handleEnter,
+}: EnterSectionProps) {
+  const MIN_ENTRY_AMOUNT = 0.0005;
+  const [amount, setAmount] = useState<number>(0);
+
+  function onEnter() {
+    handleEnter(amount);
+  }
+
+  if (!currentAccount) return null;
+  return (
+    <div>
+      <label>Amount</label>
+      <br />
+      <input
+        data-testid="amount-input"
+        type="number"
+        step={MIN_ENTRY_AMOUNT}
+        min={MIN_ENTRY_AMOUNT}
+        value={amount}
+        onChange={({ target }) => setAmount(parseFloat(target.value))}
+      />
+      {enterStatus ? (
+        <p>{enterStatus}</p>
+      ) : (
+        <button
+          data-testid="enter-button"
+          disabled={amount < MIN_ENTRY_AMOUNT}
+          onClick={onEnter}
+        >
+          Enter
+        </button>
+      )}
+    </div>
+  );
+}
+
+export function InfoSection({
   currentAccount,
   manager,
   players,
@@ -178,36 +225,39 @@ function InfoSection({
 }
 
 type ManagerSectionProps = {
-  isManager: boolean;
+  isManager?: boolean;
   winner?: Player;
-  hasPlayers: boolean;
+  hasPlayers?: boolean;
   handlePickWinner: () => void;
 };
-function ManagerSection({
+export function ManagerSection({
   isManager,
   winner,
   hasPlayers,
   handlePickWinner,
 }: ManagerSectionProps) {
   if (!isManager) return null;
-  return (
-    <>
-      {winner || !hasPlayers ? null : (
-        <button onClick={handlePickWinner}>Pick winner</button>
-      )}
+
+  if (winner)
+    return (
       <div>
-        {winner ? (
-          <p>
-            <span
-              style={{ fontSize: 40 }}
-              dangerouslySetInnerHTML={{ __html: winner.symbol }}
-            ></span>
-            {winner.address} has won!
-          </p>
-        ) : null}
+        <p>
+          <span
+            style={{ fontSize: 40 }}
+            dangerouslySetInnerHTML={{ __html: winner.symbol }}
+          ></span>
+          {winner.address} has won!
+        </p>
       </div>
-    </>
-  );
+    );
+  if (hasPlayers)
+    return (
+      <button data-testid="pickWinner-button" onClick={handlePickWinner}>
+        Pick winner
+      </button>
+    );
+
+  return null;
 }
 
 export default Slot;

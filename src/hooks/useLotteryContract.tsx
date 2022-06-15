@@ -2,7 +2,7 @@ import web3 from "../web3";
 import lottery from "../lottery";
 import { useEffect, useState } from "react";
 
-type Address = string;
+export type Address = string;
 type InitialData = [string, string[], string, string[]];
 
 export function useLotteryContract() {
@@ -11,7 +11,6 @@ export function useLotteryContract() {
   const [players, setPlayers] = useState<Address[]>([]);
   const [winner, setWinner] = useState<Address>();
   const [contractBalance, setContractBalance] = useState<string>("");
-  console.log({ winner });
 
   const isManager = currentAccount === manager;
 
