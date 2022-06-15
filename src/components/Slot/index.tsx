@@ -116,18 +116,14 @@ const Slot = () => {
       </div>
       <SlotWindow>
         <Cylinder ref={cylinderRef} duration={duration}>
-          {players.map((symbol, index) => {
-            console.log(index, index * (360 / players.length));
-
-            return (
-              <SlotItem
-                dangerouslySetInnerHTML={{ __html: symbol }}
-                key={index}
-                rotateXDeg={index * (360 / players.length)}
-                translateZ={getTranslateZ(players.length)}
-              />
-            );
-          })}
+          {players.map((symbol, index) => (
+            <SlotItem
+              dangerouslySetInnerHTML={{ __html: symbol }}
+              key={index}
+              rotateXDeg={index * (360 / players.length)}
+              translateZ={getTranslateZ(players.length)}
+            />
+          ))}
         </Cylinder>
       </SlotWindow>
     </LotteryScreen>
