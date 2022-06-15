@@ -1,138 +1,213 @@
 import { useEffect, useRef, useState } from "react";
-import styled from "styled-components";
-import lottery from "../../lottery";
-import "./Slot.css";
-
-const LotteryScreen = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  margin: 100px;
-`;
-
-const SlotWindow = styled.span`
-  display: inline-block;
-  font-size: 64px;
-  width: 1em;
-  height: 1em;
-  border: 2px inset red;
-  vertical-align: middle;
-  margin: 100px 10px;
-`;
-
-const Cylinder = styled.span<{ duration?: number; animationFunction?: string }>`
-  position: relative;
-  z-index: -1;
-  display: block;
-  margin-top: 0.5em;
-  animation-duration: ${(props) => props.duration ?? 0}s;
-  animation-name: rotating;
-  animation-iteration-count: infinite;
-  animation-timing-function: linear;
-  transform-style: preserve-3d;
-  transition: all 0.5s ease-in-out;
-`;
+import { useLotteryContract } from "../../hooks/useLotteryContract";
+import { LotteryScreen, Cylinder, SlotWindow, SlotItem } from "./styles";
 
 const getTranslateZ = (total = 0) => {
   if (total < 6) return 1;
   return total / 6 < 2 ? 2 : total / 6;
 };
-const SlotItem = styled.span<{ rotateXDeg: number; translateZ: number }>`
-  position: absolute;
-  top: -0.5em;
-  left: 0;
-  display: block;
-  width: 1em;
-  height: 1em;
-  text-align: center;
-  line-height: 1;
-  backface-visibility: hidden;
-  transform: rotateX(${({ rotateXDeg }) => rotateXDeg}deg)
-    translateZ(${({ translateZ }) => translateZ}em);
-`;
 
+const generateEmoji = () => `&#1285${Math.floor(Math.random() * 100)};`;
+
+export type Player = { symbol: string; address: string };
 const Slot = () => {
-  const [manager, setManager] = useState();
-  const [prizePool, setPrizePool] = useState(0);
-  const [duration, setDuration] = useState(20);
-  const [amount, setAmount] = useState("");
+  const [duration, setDuration] = useState(10);
+  const [amount, setAmount] = useState<number>(0);
   const cylinderRef = useRef<HTMLSpanElement>(null);
-  const [winner, setWinner] = useState<number>(-1);
-  const [players, setPlayers] = useState<string[]>([]);
+  const [winnerWithEmoji, setWinnerWithEmoji] = useState<Player>();
+  const [playersWithEmoji, setPlayersWithEmoji] = useState<Player[]>([]);
+  const [enterStatus, setEnterStatus] = useState<string>("");
+  const {
+    currentAccount,
+    isManager,
+    players,
+    manager,
+    contractBalance,
+    winner,
+    enter,
+    pickWinner,
+  } = useLotteryContract();
+  console.log({ winnerWithEmoji, winner });
 
-  function handleEnter() {
-    // if (!amount) return;
+  async function handleEnter() {
+    setEnterStatus("Entering a competition...");
+    await enter(`${amount}`);
+    setEnterStatus("You've successfully entered");
+    setTimeout(() => setEnterStatus(""), 1000);
 
-    const newEmoji = `&#1285${Math.floor(Math.random() * 100)};`;
-    setPlayers((prevState) => [...prevState, newEmoji]);
-    setPrizePool((prev) => Math.floor(prev * 10 + 1) / 10);
+    setPlayersWithEmoji(
+      players.map((address) => ({ address, symbol: generateEmoji() }))
+    );
   }
 
-  function handleSpin() {
+  function handlePickWinner() {
     setDuration(1);
+    pickWinner();
   }
 
-  useEffect(() => {
-    lottery.methods.manager().call().then(setManager);
-  }, []);
+  useEffect(
+    function onPlayersUpdateSetEmojis() {
+      if (players)
+        setPlayersWithEmoji(
+          players.map((address) => ({ address, symbol: generateEmoji() }))
+        );
+    },
+    [players]
+  );
 
-  useEffect(() => {
-    if (duration === 1)
-      setTimeout(() => {
+  useEffect(
+    function onWinnerChosenStopRotating() {
+      if (winner) {
+        const wrappedWinner = { address: winner, symbol: generateEmoji() };
+        setPlayersWithEmoji([wrappedWinner]);
+        setWinnerWithEmoji(wrappedWinner);
         setDuration(0);
-        setWinner(Math.floor(Math.random() * players.length));
-      }, 1000);
-  }, [duration, players.length]);
+      }
+    },
+    [winner]
+  );
 
-  useEffect(() => {
-    if (winner >= 0) {
-      const rotateXBy = -winner! * (360 / players.length);
-      cylinderRef!.current!.style.transform = `rotateX(${rotateXBy}deg)`;
-    }
-  }, [players.length, winner]);
+  useEffect(
+    function onWinnerRotateToWinner() {
+      if (winnerWithEmoji?.address) {
+        const rotateToWinner =
+          -winnerWithEmoji! * (360 / playersWithEmoji.length);
+        cylinderRef!.current!.style.transform = `rotateX(${rotateToWinner}deg)`;
+      }
+    },
+    [playersWithEmoji.length, winnerWithEmoji]
+  );
 
   return (
     <LotteryScreen>
       <div style={{ backdropFilter: "blur(10px)", paddingBottom: 20 }}>
-        <h1>Lottery</h1>
-        <p>Manager address: {manager}</p>
-        <p>Total players: {players.length}</p>
-        <p>Prize pool: {prizePool} ether</p>
+        <h1>🎰Lottery🎰</h1>
         <div>
-          <div>
-            <label htmlFor="">Amount</label>
-            <br />
-            <input
-              name="amount"
-              value={amount}
-              onChange={({ target }) => setAmount(target.value)}
-            />
-            <button onClick={handleEnter}>Enter</button>
-          </div>
-          {winner > -2 ? <button onClick={handleSpin}>Spin</button> : null}
-          <div>
-            {winner >= 0 ? (
-              <p>{winner} has won!</p>
-            ) : (
-              <p>spin to choose winner</p>
-            )}
-          </div>
+          {currentAccount ? (
+            <div>
+              <label>Amount</label>
+              <br />
+              <input
+                name="amount"
+                type="number"
+                step={0.0005}
+                min={0.0005}
+                value={amount}
+                onChange={({ target }) => setAmount(parseFloat(target.value))}
+              />
+              {enterStatus ? (
+                <p>{enterStatus}</p>
+              ) : (
+                <button disabled={amount < 0.0005} onClick={handleEnter}>
+                  Enter
+                </button>
+              )}
+            </div>
+          ) : null}
+          <ManagerSection
+            hasPlayers={!!players.length}
+            isManager={isManager}
+            winner={winnerWithEmoji}
+            handlePickWinner={handlePickWinner}
+          />
         </div>
       </div>
       <SlotWindow>
         <Cylinder ref={cylinderRef} duration={duration}>
-          {players.map((symbol, index) => (
+          {winnerWithEmoji ? (
             <SlotItem
-              dangerouslySetInnerHTML={{ __html: symbol }}
-              key={index}
-              rotateXDeg={index * (360 / players.length)}
-              translateZ={getTranslateZ(players.length)}
+              dangerouslySetInnerHTML={{ __html: winnerWithEmoji.symbol }}
+              rotateXDeg={0}
+              translateZ={0}
             />
-          ))}
+          ) : (
+            playersWithEmoji.map(({ symbol }, index) => (
+              <SlotItem
+                dangerouslySetInnerHTML={{ __html: symbol }}
+                key={index}
+                rotateXDeg={index * (360 / playersWithEmoji.length)}
+                translateZ={getTranslateZ(playersWithEmoji.length)}
+              />
+            ))
+          )}
         </Cylinder>
       </SlotWindow>
+      <InfoSection
+        currentAccount={currentAccount}
+        manager={manager}
+        players={players}
+        contractBalance={contractBalance}
+      />
     </LotteryScreen>
   );
 };
+
+function InfoSection({
+  currentAccount,
+  manager,
+  players,
+  contractBalance,
+}: any) {
+  const formatAddress = (address: string) =>
+    `${address.slice(0, 6)}...${address.slice(-6)}`;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        textAlign: "start",
+        top: 0,
+        right: 0,
+        backdropFilter: "blur(10px)",
+      }}
+    >
+      <p>
+        <b>Manager address:</b> {manager && formatAddress(manager)}
+      </p>
+      <p>
+        <b>Your address:</b> {currentAccount && formatAddress(currentAccount)}
+      </p>
+      <p>
+        <b>Total players:</b> {players.length}
+      </p>
+      <p>
+        <b>Prize pool:</b> {contractBalance} ether
+      </p>
+    </div>
+  );
+}
+
+type ManagerSectionProps = {
+  isManager: boolean;
+  winner?: Player;
+  hasPlayers: boolean;
+  handlePickWinner: () => void;
+};
+function ManagerSection({
+  isManager,
+  winner,
+  hasPlayers,
+  handlePickWinner,
+}: ManagerSectionProps) {
+  if (!isManager) return null;
+  return (
+    <>
+      {winner || !hasPlayers ? null : (
+        <button onClick={handlePickWinner}>Pick winner</button>
+      )}
+      <div>
+        {winner ? (
+          <p>
+            <span
+              style={{ fontSize: 40 }}
+              dangerouslySetInnerHTML={{ __html: winner.symbol }}
+            ></span>
+            {winner.address} has won!
+          </p>
+        ) : null}
+      </div>
+    </>
+  );
+}
+
 export default Slot;
