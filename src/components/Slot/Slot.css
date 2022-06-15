@@ -1,0 +1,70 @@
+.digit {
+  display: inline-block;
+  font-size: 64px;
+  width: 1em;
+  height: 1em;
+  border: 2px inset red;
+  vertical-align: middle;
+  margin: 100px 10px;
+}
+.cylinder {
+  position: relative;
+  z-index: -1;
+  display: block;
+  margin-top: 0.5em;
+  animation-duration: 20s;
+  animation-name: rotating;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+  transform-style: preserve-3d;
+}
+.cylinder > b {
+  position: absolute;
+  top: -0.5em;
+  left: 0;
+  display: block;
+  width: 1em;
+  height: 1em;
+  text-align: center;
+  line-height: 1;
+  backface-visibility: hidden;
+}
+.cylinder > b:nth-child(1) {
+  transform: rotateX(0deg) translateZ(1.538em);
+}
+.cylinder > b:nth-child(2) {
+  transform: rotateX(36deg) translateZ(1.538em);
+}
+.cylinder > b:nth-child(3) {
+  transform: rotateX(72deg) translateZ(1.538em);
+}
+.cylinder > b:nth-child(4) {
+  transform: rotateX(108deg) translateZ(1.538em);
+}
+.cylinder > b:nth-child(5) {
+  transform: rotateX(144deg) translateZ(1.538em);
+}
+.cylinder > b:nth-child(6) {
+  transform: rotateX(180deg) translateZ(1.538em);
+}
+.cylinder > b:nth-child(7) {
+  transform: rotateX(216deg) translateZ(1.538em);
+}
+.cylinder > b:nth-child(8) {
+  transform: rotateX(252deg) translateZ(1.538em);
+}
+.cylinder > b:nth-child(9) {
+  transform: rotateX(288deg) translateZ(1.538em);
+}
+.cylinder > b:nth-child(10) {
+  transform: rotateX(324deg) translateZ(1.538em);
+}
+
+@keyframes rotating {
+  from {
+    transform: rotateX(360deg);
+  }
+  to {
+    transform: rotateX(0deg);
+  }
+}
